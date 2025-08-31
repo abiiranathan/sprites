@@ -22,6 +22,7 @@ type Config struct {
 	SourcePrefix string   // optional prefix for source image paths
 	Images       []string // list of image file paths to include in the sprite
 	CopyTo       string   // optional destination to copy the sprite
+	StaticPrefix string   // optional prefix for static assets in generated HTML/CSS
 }
 
 // Generate creates the sprite, CSS, and HTML files.
@@ -183,8 +184,17 @@ func combineImages(cfg *Config, imgs []image.Image) error {
 // generateCSS creates a CSS file mapping each icon to its position in the sprite
 func generateCSS(cfg *Config) error {
 	var sb strings.Builder
+
+	// Use StaticPrefix if provided for the sprite URL
+	staticURL := cfg.SpriteFile
+
+	// Prepend StaticPrefix if provided
+	if cfg.StaticPrefix != "" {
+		staticURL = strings.TrimRight(cfg.StaticPrefix, "/") + "/" + cfg.SpriteFile
+	}
+
 	sb.WriteString(fmt.Sprintf(".sprite-icon { background-image: url('%s'); width: %dpx; height: %dpx; display: inline-block; }\n\n",
-		cfg.SpriteFile, cfg.IconSize, cfg.IconSize))
+		staticURL, cfg.IconSize, cfg.IconSize))
 
 	for i, imgPath := range cfg.Images {
 		name := strings.TrimSuffix(filepath.Base(imgPath), filepath.Ext(imgPath))
@@ -198,7 +208,15 @@ func generateCSS(cfg *Config) error {
 // generateHTML creates an HTML file demonstrating the use of the sprite icons
 func generateHTML(cfg *Config) error {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("<!DOCTYPE html>\n<html>\n<head>\n<link rel='stylesheet' href='%s'>\n</head>\n<body>\n", cfg.CSSFile))
+	// Use StaticPrefix if provided for the CSS URL
+	cssURL := cfg.CSSFile
+
+	// Prepend StaticPrefix if provided
+	if cfg.StaticPrefix != "" {
+		cssURL = strings.TrimRight(cfg.StaticPrefix, "/") + "/" + cfg.CSSFile
+	}
+
+	sb.WriteString(fmt.Sprintf("<!DOCTYPE html>\n<html>\n<head>\n<link rel='stylesheet' href='%s'>\n</head>\n<body>\n", cssURL))
 	for _, imgPath := range cfg.Images {
 		name := strings.TrimSuffix(filepath.Base(imgPath), filepath.Ext(imgPath))
 		sb.WriteString(fmt.Sprintf("<div class='sprite-icon %s'></div>\n", name))
