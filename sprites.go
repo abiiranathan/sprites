@@ -133,29 +133,7 @@ func loadAndResize(cfg *Config, path string) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode image %s: %w", fullPath, err)
 	}
-
-	return resizeNearestNeighbor(cfg.IconSize, img), nil
-}
-
-func resizeNearestNeighbor(size int, src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewRGBA(image.Rect(0, 0, size, size))
-	w, h := b.Dx(), b.Dy()
-
-	for y := range size {
-		for x := range size {
-			sx := x * w / size
-			sy := y * h / size
-			if sx >= w {
-				sx = w - 1 // prevent out-of-bounds
-			}
-			if sy >= h {
-				sy = h - 1 // prevent out-of-bounds
-			}
-			dst.Set(x, y, src.At(b.Min.X+sx, b.Min.Y+sy))
-		}
-	}
-	return dst
+	return ResizeLanczos3(cfg.IconSize, cfg.IconSize, img), nil
 }
 
 // saveImage saves an image to the specified path in PNG format
