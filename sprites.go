@@ -208,9 +208,43 @@ func generateHTML(cfg *Config) error {
 	return os.WriteFile(filepath.Join(cfg.OutputDir, cfg.HTMLFile), []byte(sb.String()), 0644)
 }
 
+// Check if copy destination is the same as output directory
+func isSameDirectory(path1, path2 string) (bool, error) {
+	if path1 == "" || path2 == "" {
+		return false, nil
+	}
+
+	abs1, err := filepath.Abs(path1)
+	if err != nil {
+		return false, fmt.Errorf("failed to get absolute path for %s: %w", path1, err)
+	}
+
+	abs2, err := filepath.Abs(path2)
+	if err != nil {
+		return false, fmt.Errorf("failed to get absolute path for %s: %w", path2, err)
+	}
+
+	// Clean the paths to normalize . and .. components
+	abs1 = filepath.Clean(abs1)
+	abs2 = filepath.Clean(abs2)
+
+	return abs1 == abs2, nil
+}
+
 // copySprite copies the generated sprite image to a specified location if configured
 func copySprite(cfg *Config) error {
 	if cfg.CopyTo == "" {
+		return nil
+	}
+
+	// Avoid copying to the same location
+	same, err := isSameDirectory(cfg.CopyTo, cfg.OutputDir)
+	if err != nil {
+		return fmt.Errorf("failed to compare directories: %w", err)
+	}
+
+	if same {
+		fmt.Printf("Warning: Copy destination is the same as output directory; skipping copy.\n")
 		return nil
 	}
 
